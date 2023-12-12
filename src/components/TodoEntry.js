@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { createUseStyles } from 'react-jss';
-import { useDispatch, useSelector } from 'react-redux';
-import { checkTodoByIndex, todoAdded, todoRemoved, updateTextByIndex } from '../redux/slices/TodoListSlice';
-import { focusTo } from '../utils/textAreaFocus';
+// import { useDispatch, useSelector } from 'react-redux';
+import { useYContext } from './YContext';
+import * as Y from 'yjs';
+import { v4 } from 'uuid';
 
 const useStyles = createUseStyles({
 	todoentry: {
@@ -56,16 +57,11 @@ const useStyles = createUseStyles({
 export const TodoEntry = (props) => {
 	let { checked, texted, idx: index } = props;
 
-	const todoCount = useSelector((state) => state.todoList.length);
-	const [check, setCheck] = useState(checked);
-	const [text, setText] = useState(texted);
+	const { todosArray } = useYContext();
 
-	const [rerendered, setRerendered] = useState(false);
-	const [lastEvent, setLastEvent] = useState();
+	const [rerendered, setRerendered] = useState({ rerendered: false, lastEvent: null });
 
 	const classes = useStyles();
-
-	const dispatch = useDispatch();
 
 	const getNextTextArea = (e) => {
 		const currentEntry = e.target.closest('#todoEntry');
@@ -81,59 +77,81 @@ export const TodoEntry = (props) => {
 		return prevTextArea || e;
 	};
 
+	const setYArrayElementAtIndex = (index, value) => {
+		const ymap = todosArray.get(index);
+		if (ymap) {
+			const oldValue = ymap.get('value');
+			ymap.set('value', { ...oldValue, ...value });
+		}
+	};
+
 	const handleKeyPress = (e) => {
 		if (e.key === 'Enter') {
 			e.preventDefault();
 
 			// addTodoList in Redux
-			dispatch(todoAdded({ text: '', checked: false, index }));
+			const toBeInsertedIndex = index + 1;
+
+			// todosArray.insert(toBeInsertedIndex, [{ text: '', checked: false, toBeInsertedIndex, id: uuidv4() }]);
+
+			const newYmap = new Y.Map();
+			newYmap.set('value', { text: '', checked: false, index: todosArray.toArray().length, id: v4() });
+			todosArray.insert(toBeInsertedIndex, [newYmap]);
 
 			// after adding a todo entry, move cursor to the new entry.
 			// this is done after rerendering / the new todo entry is rendered with the other entries.
 			// for this, we use the useEffect hook with the help of some flags: rerendered & lastEvent
 
-			setRerendered(true);
-			setLastEvent(e);
+			setRerendered({ rerendered: true, lastEvent: e });
 		}
 
 		// backspace
 		if (e.key === 'Backspace') {
-			if (text.length < 1) {
+			if (texted.length < 1) {
 				e.preventDefault();
-				if (index > 0) focusTo(getPrevTextArea(e));
-				dispatch(todoRemoved(index));
+				if (index >= 0) {
+					// if the current entry is the first entry, then focus on the next entry
+					if (index === 0) {
+						// if the current entry is the only entry, then don't focus on anything
+						if (todosArray.length === 1) {
+							e.target.blur();
+						} else {
+							getNextTextArea(e).focus();
+						}
+					} else {
+						getPrevTextArea(e).focus();
+					}
+
+					todosArray.delete(index, 1);
+					setRerendered({ rerendered: true, lastEvent: e });
+				}
 			}
 		}
 
 		// arrow up
 		if (e.key === 'ArrowUp') {
 			e.preventDefault();
-			index > 0 && focusTo(getPrevTextArea(e));
+			index > 0 && getPrevTextArea(e).focus();
 		}
 
 		// arrow down
 		if (e.key === 'ArrowDown') {
 			e.preventDefault();
-			index < todoCount - 1 && focusTo(getNextTextArea(e));
+			index < todosArray.length - 1 && getNextTextArea(e).focus();
 		}
 	};
 
 	const handleBlur = (e) => {
-		// updateTodoList in Redux
-		console.log('blur, saved at index;', index);
-		dispatch(updateTextByIndex({ text: e.target.value, index }));
+		setYArrayElementAtIndex(index, { text: e.target.value });
 	};
 
 	const handleCheck = () => {
 		// check or uncheck the entry
-		setCheck(!check);
-		// updateTodoList in Redux
-		dispatch(checkTodoByIndex({ check: !check, index }));
+		setYArrayElementAtIndex(index, { checked: !checked });
 	};
 
 	const handleEditText = (e) => {
-		// update entry text
-		setText(e.target.value);
+		setYArrayElementAtIndex(index, { text: e.target.value });
 	};
 
 	// dynamically changes the height of the text area by changing the "rows" property
@@ -145,20 +163,24 @@ export const TodoEntry = (props) => {
 
 	// this hook is used solely for delaying the focus after adding a new entry
 	useEffect(() => {
-		if (rerendered) {
+		if (rerendered.rerendered) {
 			// only after the document is rendered will the text area of the new entry be focused
-			focusTo(getNextTextArea(lastEvent));
+			if (rerendered.lastEvent.key === 'Enter') getNextTextArea(rerendered.lastEvent).focus();
+			// else if (rerendered.lastEvent.key === 'Backspace') {
+			// 	if (index === 0) {
+			// 		getNextTextArea(rerendered.lastEvent).focus();
+			// 	}
+			// }
 
 			// then reset the flags
-			setRerendered(false);
-			setLastEvent(null);
+			setRerendered({ rerendered: false, lastEvent: null });
 		}
-	}, [rerendered, lastEvent]);
+	}, [rerendered]);
 
 	return (
 		<div className={classes.todoentry} id='todoEntry'>
 			{/** checkbox */}
-			<div className={check ? classes.checkboxChecked : classes.checkbox} onClick={handleCheck} id='checkBox'></div>
+			<div className={checked ? classes.checkboxChecked : classes.checkbox} onClick={handleCheck} id='checkBox'></div>
 
 			{/** text */}
 			<div className={classes.text} id='textContainer'>
@@ -166,10 +188,10 @@ export const TodoEntry = (props) => {
 					id={'todoText' + index}
 					cols={142}
 					rows={1}
-					value={text}
+					value={texted}
 					onChange={handleEditText}
-					style={{ color: check ? '#AAA' : '#000' }}
-					disabled={check}
+					style={{ color: checked ? '#AAA' : '#000' }}
+					disabled={checked}
 					onKeyDown={handleKeyPress}
 					onBlur={handleBlur}
 					onInput={adjustSize}

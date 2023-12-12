@@ -1,13 +1,15 @@
 import { createUseStyles } from 'react-jss';
-import { todoAdded } from '../redux/slices/TodoListSlice';
+// import { todoAdded } from '../redux/slices/TodoListSlice';
 import { TodoEntry } from './TodoEntry';
-import { connect, useDispatch } from 'react-redux';
-import { focusTo } from '../utils/textAreaFocus';
 import { useEffect, useState } from 'react';
+import { useYContext } from './YContext';
+import { v4 } from 'uuid';
+import * as Y from 'yjs';
+// yjs
 
 const useStyles = createUseStyles({
 	body: {
-		overflowY: 'scroll',
+		overflowY: 'auto',
 		height: 'calc(100vh - 55px)',
 	},
 
@@ -54,60 +56,93 @@ const useStyles = createUseStyles({
 	},
 });
 
-const TodoList = (props) => {
-	const { todoList } = props;
+const TodoList = () => {
 	const classes = useStyles();
-	const dispatch = useDispatch();
 
-	const [rerendered, setRerendered] = useState(false);
-	const [lastEvent, setLastEvent] = useState();
+	const { todosArray } = useYContext();
+
+	const [someState, setSomeState] = useState(false);
+
+	const [rerendered, setRerendered] = useState({ rerendered: false, lastEvent: null });
+
+	// const [todoList, setTodoList] = useState([]);
 
 	const addTodo = (e) => {
-		dispatch(todoAdded({ text: '', checked: false, index: props.todoList.length - 1 }));
+		// todosArray.push([{ text: '', checked: false, index: todosArray.toArray().length, id: v4() }]);
 
-		setRerendered(true);
-		setLastEvent(e);
+		// const newYmap = ydoc.getMap('arraymember');
+		const newYmap = new Y.Map();
+		newYmap.set('value', { text: '', checked: false, index: todosArray.toArray().length, id: v4() });
+		// console.log('🚀 ~ file: TodoList.js:74 ~ addTodo ~ newYmap:', newYmap.get('value'));
+		todosArray.push([newYmap]);
+		// console.log('🚀 ~ file: TodoList.js:75 ~ addTodo ~ todosArray:', todosArray.toArray());
+
+		setRerendered({ rerendered: true, lastEvent: e });
 	};
 
 	const getNewTextArea = (e) => {
 		const currentEntry = e.target.closest('#shadowEntry');
 		const newEntry = currentEntry.previousElementSibling;
 		const newTextArea = newEntry.querySelector('textarea');
-		console.log('🚀 ~ file: TodoList.js:68 ~ getNewTextArea ~ newTextArea:', newTextArea);
 		return newTextArea || e;
 	};
 
-	// this hook is used solely for delaying the focus after adding a new entry
 	useEffect(() => {
-		if (rerendered) {
-			// only after the document is rendered will the text area of the new entry be focused
-			focusTo(getNewTextArea(lastEvent));
+		// console.log('TodoList: useEffect called', todosArray?.toArray());
+		if (todosArray) {
+			const observer = (update) => {
+				// console.log('🚀 ~ file: TodoList.js:89 ~ observer ~ update:', update[0].changes);
+				// call a function to force render the page
+				setSomeState(!someState);
+				// console.log('observer called and rerendering');
 
-			// then reset the flags
-			setRerendered(false);
-			setLastEvent(null);
+			};
+
+			todosArray.observeDeep(observer);
+
+			return () => {
+				todosArray.unobserveDeep(observer);
+			};
 		}
-	}, [rerendered, lastEvent]);
+	}, [someState, todosArray]);
 
-	return (
-		<div className={classes.body}>
-			{todoList.map((entry, index) => (
-				<TodoEntry texted={entry.text} checked={entry.checked} idx={index} key={entry.id} />
-			))}
+	useEffect(() => {
+		if (rerendered.rerendered) {
+			getNewTextArea(rerendered.lastEvent).focus();
+			setRerendered({ rerendered: false, lastEvent: null });
+		}
+	}, [rerendered, todosArray]);
 
-			<div className={classes.todoentry} onClick={addTodo} id='shadowEntry'>
-				<div className={classes.checkbox}></div>
+	if (todosArray) {
+		// console.log('rerendered', todosArray.toArray());
+	}
 
-				<div className={classes.text}>
-					<textarea id={`todoText${todoList.length}`} cols={142} rows={1} />
+	// console.log('🚀 ~ file: TodoList.js:135 ~ TodoList ~ todoList:', todosArray.toArray());
+
+	if (todosArray) {
+		return (
+			<div className={classes.body}>
+				{todosArray.toArray().map((ymap, index) => {
+					const entry = ymap.get('value');
+					return <TodoEntry texted={entry.text} checked={entry.checked} idx={index} key={entry.id} />;
+				})}
+
+				<div className={classes.todoentry} onClick={addTodo} id='shadowEntry'>
+					<div className={classes.checkbox}></div>
+
+					<div className={classes.text}>
+						<textarea id={`todoText${todosArray.length}`} cols={142} rows={1} />
+					</div>
 				</div>
 			</div>
-		</div>
-	);
+		);
+	}
 };
 
-const mapStateToProps = (state) => ({
-	todoList: state.todoList,
-});
+// const mapStateToProps = (state) => ({
+// 	todoList: state.todoList,
+// });
 
-export default connect(mapStateToProps)(TodoList);
+// export default connect(mapStateToProps)(TodoList);
+
+export default TodoList;
