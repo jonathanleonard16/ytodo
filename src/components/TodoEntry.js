@@ -55,9 +55,9 @@ const useStyles = createUseStyles({
 });
 
 export const TodoEntry = (props) => {
-	let { checked, texted, idx: index } = props;
+	let { checked, texted, idx: index, color } = props;
 
-	const { todosArray } = useYContext();
+	const { todosArray, awareness } = useYContext();
 
 	const [rerendered, setRerendered] = useState({ rerendered: false, lastEvent: null });
 
@@ -116,10 +116,12 @@ export const TodoEntry = (props) => {
 						if (todosArray.length === 1) {
 							e.target.blur();
 						} else {
-							getNextTextArea(e).focus();
+							const currentTextArea = getNextTextArea(e);
+							currentTextArea.focus();
 						}
 					} else {
-						getPrevTextArea(e).focus();
+						const currentTextArea = getPrevTextArea(e);
+						currentTextArea.focus();
 					}
 
 					todosArray.delete(index, 1);
@@ -131,18 +133,31 @@ export const TodoEntry = (props) => {
 		// arrow up
 		if (e.key === 'ArrowUp') {
 			e.preventDefault();
-			index > 0 && getPrevTextArea(e).focus();
+			if (index > 0) {
+				const currentTextArea = getPrevTextArea(e);
+				currentTextArea.focus();
+			}
 		}
 
 		// arrow down
 		if (e.key === 'ArrowDown') {
 			e.preventDefault();
-			index < todosArray.length - 1 && getNextTextArea(e).focus();
+			if (index < todosArray.length - 1) {
+				const currentTextArea = getNextTextArea(e);
+				currentTextArea.focus();
+			}
 		}
 	};
 
 	const handleBlur = (e) => {
 		setYArrayElementAtIndex(index, { text: e.target.value });
+	};
+
+	const handleFocus = (e) => {
+		e.target.setSelectionRange(e.target.value.length, e.target.value.length);
+		awareness.setLocalStateField('focusing', { index: index, color: awareness.getLocalState().usercolor });
+		// rerender
+		setRerendered({ rerendered: true, lastEvent: e });
 	};
 
 	const handleCheck = () => {
@@ -165,7 +180,11 @@ export const TodoEntry = (props) => {
 	useEffect(() => {
 		if (rerendered.rerendered) {
 			// only after the document is rendered will the text area of the new entry be focused
-			if (rerendered.lastEvent.key === 'Enter') getNextTextArea(rerendered.lastEvent).focus();
+			if (rerendered.lastEvent.key === 'Enter') {
+				const currentTextArea = getNextTextArea(rerendered.lastEvent);
+				currentTextArea.focus();
+				currentTextArea.setSelectionRange(currentTextArea.value.length, currentTextArea.value.length);
+			}
 			// else if (rerendered.lastEvent.key === 'Backspace') {
 			// 	if (index === 0) {
 			// 		getNextTextArea(rerendered.lastEvent).focus();
@@ -190,11 +209,13 @@ export const TodoEntry = (props) => {
 					rows={1}
 					value={texted}
 					onChange={handleEditText}
-					style={{ color: checked ? '#AAA' : '#000' }}
+					style={{ color: checked ? '#AAA' : color }}
 					disabled={checked}
 					onKeyDown={handleKeyPress}
 					onBlur={handleBlur}
 					onInput={adjustSize}
+					onFocus={handleFocus}
+					spellCheck='false'
 				/>
 			</div>
 		</div>

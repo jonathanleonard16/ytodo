@@ -59,9 +59,14 @@ const useStyles = createUseStyles({
 const TodoList = () => {
 	const classes = useStyles();
 
-	const { todosArray } = useYContext();
+	const { todosArray, connected, awareness } = useYContext();
 
+	// const indexToColor :
+	// {index: Number,
+	// color: String}[]
 	const [someState, setSomeState] = useState(false);
+
+	const [colorArray, setColorArray] = useState([]);
 
 	const [rerendered, setRerendered] = useState({ rerendered: false, lastEvent: null });
 
@@ -93,9 +98,9 @@ const TodoList = () => {
 			const observer = (update) => {
 				// console.log('🚀 ~ file: TodoList.js:89 ~ observer ~ update:', update[0].changes);
 				// call a function to force render the page
+				// console.log('rerendering todolist');
 				setSomeState(!someState);
 				// console.log('observer called and rerendering');
-
 			};
 
 			todosArray.observeDeep(observer);
@@ -104,7 +109,7 @@ const TodoList = () => {
 				todosArray.unobserveDeep(observer);
 			};
 		}
-	}, [someState, todosArray]);
+	}, [someState, todosArray, connected]);
 
 	useEffect(() => {
 		if (rerendered.rerendered) {
@@ -113,9 +118,31 @@ const TodoList = () => {
 		}
 	}, [rerendered, todosArray]);
 
-	if (todosArray) {
-		// console.log('rerendered', todosArray.toArray());
-	}
+	useEffect(() => {
+		if (awareness) {
+			const createColorArray = () => {
+				const inputArray = Array.from(awareness.getStates().values());
+				const mappedArray = inputArray
+					.filter((item) => 'focusing' in item)
+					.map((item) => ({ index: item.focusing.index, color: item.usercolor }));
+				// console.log('🚀 ~ file: TodoList.js:130 ~ mappedArray ~ mappedArray:', mappedArray);
+				const colorArray = mappedArray.reduce((result, { index, color }) => {
+					result[index] = color;
+					return result;
+				}, Array(todosArray.toArray().length).fill('#000'));
+
+				// console.log('🚀 ~ file: TodoList.js:137 ~ createColorArray ~ colorArray:', colorArray);
+				setColorArray(colorArray);
+			};
+			awareness.on('change', () => {
+				createColorArray();
+			});
+		}
+	}, [awareness, todosArray]);
+
+	// if (todosArray) {
+	// 	console.log('rerendered', todosArray.toArray());
+	// }
 
 	// console.log('🚀 ~ file: TodoList.js:135 ~ TodoList ~ todoList:', todosArray.toArray());
 
@@ -124,7 +151,15 @@ const TodoList = () => {
 			<div className={classes.body}>
 				{todosArray.toArray().map((ymap, index) => {
 					const entry = ymap.get('value');
-					return <TodoEntry texted={entry.text} checked={entry.checked} idx={index} key={entry.id} />;
+					return (
+						<TodoEntry
+							texted={entry.text}
+							checked={entry.checked}
+							idx={index}
+							key={entry.id}
+							color={colorArray[index]}
+						/>
+					);
 				})}
 
 				<div className={classes.todoentry} onClick={addTodo} id='shadowEntry'>
