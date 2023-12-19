@@ -38,6 +38,7 @@ const useStyles = createUseStyles({
 		height: '100%',
 		alignItems: 'center',
 		flex: 1,
+		position: 'relative',
 
 		'& > textarea': {
 			// color: 'red',
@@ -46,16 +47,31 @@ const useStyles = createUseStyles({
 			resize: 'none',
 			flex: 1,
 
+			height: '45px',
+
+			// fontSize: '17px',
+			// fontFamily: 'Arial',
+
 			'&:disabled': {
 				backgroundColor: '#0000',
 				// fontWeight: 600,
 			},
 		},
+		'& .nametag': {
+			position: 'absolute',
+
+			fontSize: '11px',
+			// backgroundColor: '#000',
+			color: '#AAA',
+			padding: '3px 5px',
+			borderRadius: '3px',
+			// top: '30px',
+		},
 	},
 });
 
 export const TodoEntry = (props) => {
-	let { checked, texted, idx: index, color } = props;
+	let { checked, texted, idx: index, color, nametag } = props;
 
 	const { todosArray, awareness } = useYContext();
 
@@ -156,6 +172,10 @@ export const TodoEntry = (props) => {
 	const handleFocus = (e) => {
 		e.target.setSelectionRange(e.target.value.length, e.target.value.length);
 		awareness.setLocalStateField('focusing', { index: index, color: awareness.getLocalState().usercolor });
+
+		// move name tag to the end of the text
+		updateNametagPosition(e);
+
 		// rerender
 		setRerendered({ rerendered: true, lastEvent: e });
 	};
@@ -171,9 +191,36 @@ export const TodoEntry = (props) => {
 
 	// dynamically changes the height of the text area by changing the "rows" property
 	const adjustSize = (e) => {
-		// initially set to 1
-		// a new line is added every 142 character.
-		e.target.rows = 1 + Math.floor(e.target.value.length / 142);
+		const textArea = e.target;
+
+		textArea.style.height = 'auto';
+
+		if (e.target.scrollHeight >= 41) {
+			textArea.style.height = `${textArea.scrollHeight}px`;
+		}
+
+		updateNametagPosition(e);
+	};
+
+	const updateNametagPosition = (e) => {
+		const text = e.target.value;
+
+		const maxCharsPerLine = 145;
+		const indexAtLine = text.length % maxCharsPerLine;
+
+		awareness.setLocalStateField('nametag', {
+			index: index,
+			element: {
+				style: {
+					backgroundColor: color ? color : 'none',
+					color: 'white',
+					top: e.target.style.height,
+					left: `${indexAtLine * 10}px`,
+				},
+				username: awareness.getLocalState().username,
+			},
+		});
+		// }
 	};
 
 	// this hook is used solely for delaying the focus after adding a new entry
@@ -205,11 +252,11 @@ export const TodoEntry = (props) => {
 			<div className={classes.text} id='textContainer'>
 				<textarea
 					id={'todoText' + index}
-					cols={142}
-					rows={1}
+					// cols={142}
+					// rows={1}
 					value={texted}
 					onChange={handleEditText}
-					style={{ color: checked ? '#AAA' : color }}
+					style={{ color: checked ? '#AAA' : color ? color : 'black' }}
 					disabled={checked}
 					onKeyDown={handleKeyPress}
 					onBlur={handleBlur}
@@ -217,6 +264,12 @@ export const TodoEntry = (props) => {
 					onFocus={handleFocus}
 					spellCheck='false'
 				/>
+
+				{nametag ? (
+					<span className='nametag' style={nametag.style}>
+						{nametag.username}
+					</span>
+				) : null}
 			</div>
 		</div>
 	);

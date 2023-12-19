@@ -68,6 +68,8 @@ const TodoList = () => {
 
 	const [colorArray, setColorArray] = useState([]);
 
+	const [nameTagArray, setNametagArray] = useState([]);
+
 	const [rerendered, setRerendered] = useState({ rerendered: false, lastEvent: null });
 
 	// const [todoList, setTodoList] = useState([]);
@@ -129,13 +131,32 @@ const TodoList = () => {
 				const colorArray = mappedArray.reduce((result, { index, color }) => {
 					result[index] = color;
 					return result;
-				}, Array(todosArray.toArray().length).fill('#000'));
+				}, Array(todosArray.toArray().length).fill(null));
 
-				// console.log('🚀 ~ file: TodoList.js:137 ~ createColorArray ~ colorArray:', colorArray);
 				setColorArray(colorArray);
 			};
+
+			const createNameTagArray = () => {
+				const inputArray = Array.from(awareness.getStates().values());
+				const mappedArray = inputArray
+					.filter((item) => 'nametag' in item)
+					.map((item) => ({ index: item.nametag.index, element: item.nametag.element }));
+				// console.log('🚀 ~ file: TodoList.js:142 ~ createNameTagArray ~ mappedArray:', mappedArray);
+
+				const nametagArray = mappedArray.reduce((result, { index, element }) => {
+					result[index] = element;
+					return result;
+				}, Array(todosArray.toArray().length).fill(null));
+				console.log('🚀 ~ file: TodoList.js:150 ~ nametagArray ~ nametagArray:', nametagArray);
+
+				setNametagArray(nametagArray);
+			};
+
 			awareness.on('change', () => {
+				console.log(Array.from(awareness.getStates().values()));
+
 				createColorArray();
+				createNameTagArray();
 			});
 		}
 	}, [awareness, todosArray]);
@@ -158,6 +179,7 @@ const TodoList = () => {
 							idx={index}
 							key={entry.id}
 							color={colorArray[index]}
+							nametag={nameTagArray[index]}
 						/>
 					);
 				})}

@@ -39,6 +39,8 @@ const useStyles = createUseStyles({
 
 			fontSize: '15px',
 
+			zIndex: 2,
+
 			'& input': {
 				fontSize: '15px',
 				// marginLeft: '10px',
@@ -151,6 +153,14 @@ export const Head = () => {
 		// awareness.getStates().forEach((s) => console.log(s.user));
 	};
 
+	const handleKeyPress = (e) => {
+		if (e.key === 'Enter') {
+			e.preventDefault();
+			awareness.setLocalStateField('username', username);
+			setUserDialogOpen(false);
+		}
+	};
+
 	const showUserTooltip = (e) => {
 		const tooltip = e.target.querySelector('.user-icon-tooltip');
 		if (tooltip) {
@@ -245,6 +255,7 @@ export const Head = () => {
 						placeholder='Username'
 						onInput={handleChangeUsername}
 						defaultValue={awareness.getLocalState().username ?? ''}
+						onKeyDown={handleKeyPress}
 					/>
 					<div className='buttonGroup'>
 						<button onClick={() => setUserDialogOpen(false)}>cancel</button>
