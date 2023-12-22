@@ -124,24 +124,36 @@ const TodoList = () => {
 				const inputArray = Array.from(awareness.getStates().values());
 				// console.log('🚀 ~ file: TodoList.js:127 ~ createAwarenessInfoArray ~ inputArray:', inputArray);
 
-				const mappedArray = inputArray.map((user) => ({
+				const userStatesArray = inputArray.map((user) => ({
 					index: user.focusing?.index,
 					color: user.usercolor,
 					name: user.username,
-					style: user.focusing?.nametagStyle,
+					// style: user.focusing?.nametagStyle,
 				}));
-				// console.log('🚀 ~ file: TodoList.js:130 ~ mappedArray ~ mappedArray:', mappedArray);
-				const infoArray = mappedArray.reduce((result, { index, color, name, style }) => {
-					result[index] = { color, name, style };
-					return result;
-				}, Array(todosArray.toArray().length).fill(null));
+				console.log('🚀 ~ file: TodoList.js:130 ~ mappedArray ~ mappedArray:', userStatesArray);
+				// const infoArray = userStatesArray.reduce((result, { index, color, name, style }) => {
+				// 	const temp = result[index] || [];
+				// 	temp.push({ color, name, style });
+				// 	result[index] = temp;
 
-				// console.log('🚀 ~ file: TodoList.js:141 ~ createAwarenessInfoArray ~ infoArray:', infoArray);
+				// 	// result[index].push({ color, name, style });
+
+				// 	// result[index] = { color, name, style };
+				// 	return result;
+				// 	// }, Array(todosArray.toArray().length).fill([]));
+				// }, Array(todosArray.toArray().length).fill([]));
+
+				const infoArray = Array.from({ length: todosArray.toArray().length }, (_, index) => {
+					const usersWithIndex = userStatesArray.filter((user) => user.index === index);
+					return usersWithIndex.length > 0 ? usersWithIndex : [];
+				});
+
+				console.log('🚀 ~ file: TodoList.js:141 ~ createAwarenessInfoArray ~ infoArray:', infoArray);
 				setInfoArray(infoArray);
 			};
 
 			awareness.on('change', () => {
-				// console.log(Array.from(awareness.getStates().values()));
+				console.log(Array.from(awareness.getStates().values()));
 
 				createAwarenessInfoArray();
 			});

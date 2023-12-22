@@ -59,12 +59,22 @@ const useStyles = createUseStyles({
 				// fontWeight: 600,
 			},
 		},
-		'& .nametag': {
+
+		'& .nametagContainer': {
 			position: 'absolute',
+			top: '-20px',
+			left: '0px',
+			display: 'flex',
+			gap: '5px',
+			flex: 1,
+		},
+
+		'& .nametag': {
+			// position: 'absolute',
 
 			fontSize: '9px',
 			// backgroundColor: '#000',
-			color: '#AAA',
+			color: '#fff',
 			padding: '3px 5px',
 			borderRadius: '3px',
 			zIndex: 3,
@@ -176,6 +186,10 @@ export const TodoEntry = (props) => {
 
 	const handleBlur = (e) => {
 		setYArrayElementAtIndex(index, { text: e.target.value });
+
+		// awareness.setLocalStateField('focusing', {
+		// 	index: undefined,
+		// });
 	};
 
 	const handleFocus = (e) => {
@@ -191,6 +205,10 @@ export const TodoEntry = (props) => {
 	const handleCheck = () => {
 		// check or uncheck the entry
 		setYArrayElementAtIndex(index, { checked: !checked });
+
+		awareness.setLocalStateField('focusing', {
+			index: undefined,
+		});
 	};
 
 	const handleEditText = (e) => {
@@ -207,7 +225,7 @@ export const TodoEntry = (props) => {
 		textArea.style.height = `${textArea.scrollHeight}px`;
 		// }
 
-		updateAwareness(e);
+		// updateAwareness(e);
 	};
 
 	// const updateNametagPosition = (e) => {
@@ -246,9 +264,9 @@ export const TodoEntry = (props) => {
 	// };
 
 	const updateAwareness = (e) => {
-		console.log('🚀 ~ file: TodoEntry.js:262 ~ updateAwareness ~ e:', e);
-		const text = e.target.value;
-		console.log('🚀 ~ file: TodoEntry.js:248 ~ updateAwareness ~ text:', text.length);
+		// console.log('🚀 ~ file: TodoEntry.js:262 ~ updateAwareness ~ e:', e);
+		// const text = e.target.value;
+		// console.log('🚀 ~ file: TodoEntry.js:248 ~ updateAwareness ~ text:', text.length);
 
 		// const maxCharsPerLine = 145;
 		// const indexAtLine = text.length % maxCharsPerLine;
@@ -261,17 +279,17 @@ export const TodoEntry = (props) => {
 
 		awareness.setLocalStateField('focusing', {
 			index: index,
-			nametagStyle: {
-				color: 'white',
-				// top: e.target.style.height,
-				// top: '0px',
-				// top: `${y}px`,
-				// left: `${indexAtLine}rem`,
+			// nametagStyle: {
+			// 	color: 'white',
+			// top: e.target.style.height,
+			// top: '0px',
+			// top: `${y}px`,
+			// left: `${indexAtLine}rem`,
 
-				// left should be the position of the last character in the text area
-				// left: `${indexAtLine * steps}px`,
-				// left: `${x}px`,
-			},
+			// left should be the position of the last character in the text area
+			// left: `${indexAtLine * steps}px`,
+			// left: `${x}px`,
+			// },
 		});
 	};
 
@@ -315,7 +333,20 @@ export const TodoEntry = (props) => {
 					rows={1}
 					value={texted}
 					onChange={handleEditText}
-					style={{ color: checked ? '#AAA' : info ? info.color : 'black' }}
+					style={
+						info?.length > 0
+							? info.length > 1
+								? {
+										background:
+											'linear-gradient(to bottom, #ef5350, #f48fb1, #7e57c2, #2196f3, #26c6da, #43a047, #eeff41, #f9a825, #ff5722)',
+										backgroundClip: 'text',
+										color: 'transparent',
+								  }
+								: {
+										color: checked ? '#AAA' : info[0].color,
+								  }
+							: { color: checked ? '#AAA' : 'black' }
+					}
 					disabled={checked}
 					onKeyDown={handleKeyPress}
 					onBlur={handleBlur}
@@ -324,10 +355,28 @@ export const TodoEntry = (props) => {
 					spellCheck='false'
 				/>
 
-				{info && info.name.length > 0 ? (
+				{/* {info && info.name.length > 0 ? (
 					<span className='nametag' style={{ ...info.style, backgroundColor: info.color }}>
 						{info.name}
 					</span>
+				) : null} */}
+
+				{info ? (
+					<div className='nametagContainer'>
+						{info.map(
+							(info) =>
+								info.name.length > 0 && (
+									<span
+										className='nametag'
+										style={{
+											backgroundColor: info.color,
+										}}
+									>
+										{info.name}
+									</span>
+								)
+						)}
+					</div>
 				) : null}
 			</div>
 		</div>
