@@ -7,7 +7,7 @@ import { v4 } from 'uuid';
 
 const useStyles = createUseStyles({
 	todoentry: {
-		margin: '10px 50px',
+		margin: '20px 50px',
 		display: 'flex',
 		// alignItems: 'center',
 		minHeight: '41px',
@@ -45,11 +45,13 @@ const useStyles = createUseStyles({
 			border: 'none',
 			outline: 'none',
 			resize: 'none',
+			maxWidth: '100%',
 			flex: 1,
 
-			height: '45px',
+			// height: '45px',
+			height: 'auto',
 
-			// fontSize: '17px',
+			fontSize: '17px',
 			// fontFamily: 'Arial',
 
 			'&:disabled': {
@@ -60,18 +62,21 @@ const useStyles = createUseStyles({
 		'& .nametag': {
 			position: 'absolute',
 
-			fontSize: '11px',
+			fontSize: '9px',
 			// backgroundColor: '#000',
 			color: '#AAA',
 			padding: '3px 5px',
 			borderRadius: '3px',
-			// top: '30px',
+			zIndex: 3,
+			top: '-25px',
 		},
 	},
 });
 
 export const TodoEntry = (props) => {
-	let { checked, texted, idx: index, color, nametag } = props;
+	let { checked, texted, idx: index, info } = props;
+
+	// info: {name: String, color: String, style: {backgroundColor: String, color: String, top: String, left: String}}
 
 	const { todosArray, awareness } = useYContext();
 
@@ -134,10 +139,12 @@ export const TodoEntry = (props) => {
 						} else {
 							const currentTextArea = getNextTextArea(e);
 							currentTextArea.focus();
+							currentTextArea.setSelectionRange(currentTextArea.value.length, currentTextArea.value.length);
 						}
 					} else {
 						const currentTextArea = getPrevTextArea(e);
 						currentTextArea.focus();
+						currentTextArea.setSelectionRange(currentTextArea.value.length, currentTextArea.value.length);
 					}
 
 					todosArray.delete(index, 1);
@@ -152,6 +159,7 @@ export const TodoEntry = (props) => {
 			if (index > 0) {
 				const currentTextArea = getPrevTextArea(e);
 				currentTextArea.focus();
+				currentTextArea.setSelectionRange(currentTextArea.value.length, currentTextArea.value.length);
 			}
 		}
 
@@ -161,6 +169,7 @@ export const TodoEntry = (props) => {
 			if (index < todosArray.length - 1) {
 				const currentTextArea = getNextTextArea(e);
 				currentTextArea.focus();
+				currentTextArea.setSelectionRange(currentTextArea.value.length, currentTextArea.value.length);
 			}
 		}
 	};
@@ -170,11 +179,10 @@ export const TodoEntry = (props) => {
 	};
 
 	const handleFocus = (e) => {
-		e.target.setSelectionRange(e.target.value.length, e.target.value.length);
-		awareness.setLocalStateField('focusing', { index: index, color: awareness.getLocalState().usercolor });
+		// awareness.setLocalStateField('focusing', { index: index, color: awareness.getLocalState().usercolor });
 
 		// move name tag to the end of the text
-		updateNametagPosition(e);
+		updateAwareness(e);
 
 		// rerender
 		setRerendered({ rerendered: true, lastEvent: e });
@@ -195,32 +203,76 @@ export const TodoEntry = (props) => {
 
 		textArea.style.height = 'auto';
 
-		if (e.target.scrollHeight >= 41) {
-			textArea.style.height = `${textArea.scrollHeight}px`;
-		}
+		// if (e.target.scrollHeight >= 41) {
+		textArea.style.height = `${textArea.scrollHeight}px`;
+		// }
 
-		updateNametagPosition(e);
+		updateAwareness(e);
 	};
 
-	const updateNametagPosition = (e) => {
+	// const updateNametagPosition = (e) => {
+	// 	const text = e.target.value;
+
+	// 	const maxCharsPerLine = 145;
+	// 	const indexAtLine = text.length % maxCharsPerLine;
+
+	// 	// awareness.setLocalStateField('nametag', {
+	// 	// 	index: index,
+	// 	// 	element: {
+	// 	// 		style: {
+	// 	// 			backgroundColor: color ? color : 'none',
+	// 	// 			color: 'white',
+	// 	// 			top: e.target.style.height,
+	// 	// 			left: `${indexAtLine * 10}px`,
+	// 	// 		},
+	// 	// 		username: awareness.getLocalState().username,
+	// 	// 	},
+	// 	// });
+
+	// 	return {
+	// 		index: index,
+	// 		element: {
+	// 			style: {
+	// 				backgroundColor: color ? color : 'none',
+	// 				color: 'white',
+	// 				top: e.target.style.height,
+	// 				left: `${indexAtLine * 10}px`,
+	// 			},
+	// 			username: awareness.getLocalState().username,
+	// 		},
+	// 	};
+
+	// 	// }
+	// };
+
+	const updateAwareness = (e) => {
+		console.log('🚀 ~ file: TodoEntry.js:262 ~ updateAwareness ~ e:', e);
 		const text = e.target.value;
+		console.log('🚀 ~ file: TodoEntry.js:248 ~ updateAwareness ~ text:', text.length);
 
-		const maxCharsPerLine = 145;
-		const indexAtLine = text.length % maxCharsPerLine;
+		// const maxCharsPerLine = 145;
+		// const indexAtLine = text.length % maxCharsPerLine;
 
-		awareness.setLocalStateField('nametag', {
+		// const lineWidth = e.target.getBoundingClientRect().width;
+		// const steps = lineWidth / maxCharsPerLine;
+
+		// const caretPosition = e.target.selectionStart;
+		// console.log('🚀 ~ file: TodoEntry.js:254 ~ updateAwareness ~ caretPosition:', caretPosition);
+
+		awareness.setLocalStateField('focusing', {
 			index: index,
-			element: {
-				style: {
-					backgroundColor: color ? color : 'none',
-					color: 'white',
-					top: e.target.style.height,
-					left: `${indexAtLine * 10}px`,
-				},
-				username: awareness.getLocalState().username,
+			nametagStyle: {
+				color: 'white',
+				// top: e.target.style.height,
+				// top: '0px',
+				// top: `${y}px`,
+				// left: `${indexAtLine}rem`,
+
+				// left should be the position of the last character in the text area
+				// left: `${indexAtLine * steps}px`,
+				// left: `${x}px`,
 			},
 		});
-		// }
 	};
 
 	// this hook is used solely for delaying the focus after adding a new entry
@@ -243,6 +295,13 @@ export const TodoEntry = (props) => {
 		}
 	}, [rerendered]);
 
+	useEffect(() => {
+		// adjust size of the text area
+		const textArea = document.querySelector(`#todoText${index}`);
+		textArea.style.height = 'auto';
+		textArea.style.height = `${textArea.scrollHeight}px`;
+	});
+
 	return (
 		<div className={classes.todoentry} id='todoEntry'>
 			{/** checkbox */}
@@ -252,11 +311,11 @@ export const TodoEntry = (props) => {
 			<div className={classes.text} id='textContainer'>
 				<textarea
 					id={'todoText' + index}
-					// cols={142}
-					// rows={1}
+					// cols={10}
+					rows={1}
 					value={texted}
 					onChange={handleEditText}
-					style={{ color: checked ? '#AAA' : color ? color : 'black' }}
+					style={{ color: checked ? '#AAA' : info ? info.color : 'black' }}
 					disabled={checked}
 					onKeyDown={handleKeyPress}
 					onBlur={handleBlur}
@@ -265,9 +324,9 @@ export const TodoEntry = (props) => {
 					spellCheck='false'
 				/>
 
-				{nametag ? (
-					<span className='nametag' style={nametag.style}>
-						{nametag.username}
+				{info && info.name.length > 0 ? (
+					<span className='nametag' style={{ ...info.style, backgroundColor: info.color }}>
+						{info.name}
 					</span>
 				) : null}
 			</div>

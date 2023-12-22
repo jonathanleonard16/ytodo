@@ -66,9 +66,7 @@ const TodoList = () => {
 	// color: String}[]
 	const [someState, setSomeState] = useState(false);
 
-	const [colorArray, setColorArray] = useState([]);
-
-	const [nameTagArray, setNametagArray] = useState([]);
+	const [infoArray, setInfoArray] = useState([]);
 
 	const [rerendered, setRerendered] = useState({ rerendered: false, lastEvent: null });
 
@@ -122,41 +120,30 @@ const TodoList = () => {
 
 	useEffect(() => {
 		if (awareness) {
-			const createColorArray = () => {
+			const createAwarenessInfoArray = () => {
 				const inputArray = Array.from(awareness.getStates().values());
-				const mappedArray = inputArray
-					.filter((item) => 'focusing' in item)
-					.map((item) => ({ index: item.focusing.index, color: item.usercolor }));
+				// console.log('🚀 ~ file: TodoList.js:127 ~ createAwarenessInfoArray ~ inputArray:', inputArray);
+
+				const mappedArray = inputArray.map((user) => ({
+					index: user.focusing?.index,
+					color: user.usercolor,
+					name: user.username,
+					style: user.focusing?.nametagStyle,
+				}));
 				// console.log('🚀 ~ file: TodoList.js:130 ~ mappedArray ~ mappedArray:', mappedArray);
-				const colorArray = mappedArray.reduce((result, { index, color }) => {
-					result[index] = color;
+				const infoArray = mappedArray.reduce((result, { index, color, name, style }) => {
+					result[index] = { color, name, style };
 					return result;
 				}, Array(todosArray.toArray().length).fill(null));
 
-				setColorArray(colorArray);
-			};
-
-			const createNameTagArray = () => {
-				const inputArray = Array.from(awareness.getStates().values());
-				const mappedArray = inputArray
-					.filter((item) => 'nametag' in item)
-					.map((item) => ({ index: item.nametag.index, element: item.nametag.element }));
-				// console.log('🚀 ~ file: TodoList.js:142 ~ createNameTagArray ~ mappedArray:', mappedArray);
-
-				const nametagArray = mappedArray.reduce((result, { index, element }) => {
-					result[index] = element;
-					return result;
-				}, Array(todosArray.toArray().length).fill(null));
-				console.log('🚀 ~ file: TodoList.js:150 ~ nametagArray ~ nametagArray:', nametagArray);
-
-				setNametagArray(nametagArray);
+				// console.log('🚀 ~ file: TodoList.js:141 ~ createAwarenessInfoArray ~ infoArray:', infoArray);
+				setInfoArray(infoArray);
 			};
 
 			awareness.on('change', () => {
-				console.log(Array.from(awareness.getStates().values()));
+				// console.log(Array.from(awareness.getStates().values()));
 
-				createColorArray();
-				createNameTagArray();
+				createAwarenessInfoArray();
 			});
 		}
 	}, [awareness, todosArray]);
@@ -173,14 +160,7 @@ const TodoList = () => {
 				{todosArray.toArray().map((ymap, index) => {
 					const entry = ymap.get('value');
 					return (
-						<TodoEntry
-							texted={entry.text}
-							checked={entry.checked}
-							idx={index}
-							key={entry.id}
-							color={colorArray[index]}
-							nametag={nameTagArray[index]}
-						/>
+						<TodoEntry texted={entry.text} checked={entry.checked} idx={index} key={entry.id} info={infoArray[index]} />
 					);
 				})}
 
